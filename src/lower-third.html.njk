@@ -2,21 +2,20 @@
 
 {% block body %}
     <div class="template lower-third">
-        <div class="textbox textbox-title">
-            <p><span>Example lower-third template</span></p>
-        </div>
-        <div class="textbox textbox-subtitle">
-            <p><span>with subtitle</span></p>
-        </div>
+        <p class="textbox textbox-title"></p>
+        <p class="textbox textbox-subtitle"></p>
     </div>
 
     <script type="text/javascript">
-        (function ($) {
+        (function ($, window) {
             'use strict';
 
             HtmlCg.run(new Template(), {
-                api: [ 'bounce', 'pulse', 'shake', 'tada' ],
-                data: '{\n  "f0": "Example lower-third template (f0)",\n  "f1": "With subtitle (f1)"\n}'
+                // Define methods which can be invoked via INVOKE command here:
+                api: [ 'shake', 'tada' ],
+
+                // Set example data which is used in debug mode here:
+                data: '{\n  "f0": "Example lower-third template (f0)",\n  "f1": "with subtitle (f1)"\n}'
             });
 
             function Template () {
@@ -26,51 +25,82 @@
 
                 this.data = {};
 
-                this.load = function () {
-                    this.$title.css('width', 0).css('opacity', 0);
-                    this.$subtitle.css('height', 0).css('opacity', 0);
+                /**
+                 * The callback `onLoad()` is called when an ADD command is sent from CasparCG. After the `onLoad()`
+                 * callback, a call to `onUpdate()` is made with the data received with ADD command.
+                 *
+                 * Use this callback to set up your template such as initial visuals.
+                 *
+                 * HtmlCg ensure that this callback is called only once.
+                 */
+                this.onLoad = function () {
+                    this.$template.css('opacity', '0');
                 };
 
-                this.play = function () {
-                    var self = this;
-                    $.Velocity(self.$title, {
-                        opacity: 1,
-                        width: self.$title.find('p').innerWidth()
-                    }).then(function () {
-                        self.$subtitle.velocity({
-                            opacity: 1,
-                            height: self.$subtitle.find('p').innerHeight()
-                        });
-                    });
+                /**
+                 * The callback `onPlay()` is called when a PLAY command is sent from CasparCG.
+                 *
+                 * Use this callback to make your template visible and schedule automatics such as animations,
+                 * transformations, paging or stopping the template.
+                 *
+                 * HtmlCg ensures that this callback is called only when the template is in LOADED or STOPPED state.
+                 */
+                this.onPlay = function () {
+                    // Update the HTML template with data received via onUpdate()
+                    this.$title.text(this.data.f0);
+                    this.$subtitle.text(this.data.f1);
+
+                    // Play in-animation
+                    this.$template.velocity({ opacity: 1 });
                 };
 
-                this.stop = function () {
-                    var self = this;
-                    $.Velocity(self.$subtitle, {
-                        opacity: 0,
-                        height: 0
-                    }).then(function () {
-                        self.$title.velocity({
-                            opacity: 0,
-                            width: 0
-                        });
-                    });
+                /**
+                 * The callback `onNext()` is called when a NEXT command is sent from CasparCG.
+                 *
+                 * Use this callback to trigger the next step in multistep templates, or in list where you
+                 * want to do paging.
+                 *
+                 * HtmlCg ensures that this callback is only called when the template is in PLAYING state.
+                 */
+                this.onNext = function () {
+                    this.$template.velocity('callout.flash');
                 };
 
+                /**
+                 * The callback `onStop()` is called when a STOP command is sent from CasparCG.
+                 *
+                 * Use this callback to fade out the template and cancel timers for automatics like animations,
+                 * transformations, paging.
+                 *
+                 * HtmlCg ensures that this callback is only called when the template is in PLAYING state.
+                 */
+                this.onStop = function () {
+                    // Play out-animation
+                    this.$template.velocity({ opacity: 0 });
+                };
+
+                /**
+                 * The callback `onUpdate(data)` is call when an ADD or UPDATE command is sent from CasparCG.
+                 *
+                 * Use this callback to set your templates data or perform actions based on the data received.
+                 *
+                 * HtmlCg parses and transforms the data received from CasparCg to a JavaScript object. The raw
+                 * data can be XML or JSON.
+                 *
+                 * @param data object
+                 */
                 this.onUpdate = function (data) {
+                    // Update received data in a property for later usage,
                     this.data = $.extend({}, this.data, data);
-                    this.$title.find('span').text(this.data.f0);
-                    this.$subtitle.find('span').text(this.data.f1);
+
+                    // and/or directly update HTML elements
+                    if (data) {
+                        this.$title.text(data.f0);
+                        this.$subtitle.text(data.f1);
+                    }
                 };
 
-                this.bounce = function () {
-                    this.$template.velocity('callout.bounce');
-                };
-
-                this.pulse = function () {
-                    this.$template.velocity('callout.pulse');
-                };
-
+                // Implement methods you defined as api invokable methods
                 this.shake = function () {
                     this.$template.velocity('callout.shake');
                 };
@@ -79,6 +109,6 @@
                     this.$template.velocity('callout.tada');
                 };
             }
-        })(jQuery);
+        })(jQuery, window);
     </script>
 {% endblock %}
